@@ -1,11 +1,19 @@
-# Llama Andina: Cosecha de El Alto
+# Llama Tránsito: El Alto
 
 Videojuego 3D con Three.js + Vue + Vite. Tarea H4_T4, Hito 4 — Programación Gráfica y Multimedia I (UNIFRANZ, sede El Alto).
 
+Desde una pasarela peatonal de El Alto, una llama de tránsito vigila la avenida y **escupe a los conductores que infringen
+las normas** (celular al volante, exceso de velocidad, moto sin casco, pasar en rojo). Quien cumple la norma debe pasar sin
+multa, y a la ambulancia no se le escupe.
+
 ## Eje de innovación social
-**Eje 5: Seguridad alimentaria y nutrición.** Una llama recorre El Alto (Illimani, teleférico, casas de ladrillo) recogiendo
-alimentos andinos (papa, choclo, haba, oca, quinua) y esquivando comida ultraprocesada. Completar los 5 alimentos arma un
-**plato balanceado** que da puntos extra y una vida. Público: jóvenes y familias de El Alto.
+**Seguridad vial y prevención de accidentes** (salud pública). _Pendiente de confirmar con el docente, porque no figura
+entre los 5 ejes del Anexo A._ Plan B: eje 4, alfabetización digital.
+
+- **Problema:** el tránsito caótico de El Alto (minibuses, cruces sin respeto al peatón, motos sin casco).
+- **Público:** jóvenes y futuros conductores de El Alto.
+- **Mecánica con propósito:** el jugador tiene que *reconocer* la infracción para multar; multar a quien cumple resta
+  puntos. Al final se muestra el **% de infracciones detectadas** (impacto medible) y un consejo de seguridad vial.
 
 ## Instalación y ejecución
 Requiere Node.js 18+.
@@ -16,22 +24,41 @@ npm run dev       # desarrollo en http://localhost:5173
 npm run build     # build de producción en dist/
 npm run preview   # sirve el build
 ```
+Para pruebas: `?scene=play` o `?scene=end` en la URL abre esa escena directamente, y `?debug` expone `window.__game`.
 
 ## Controles
-| Acción | Teclado | Táctil / mouse |
+| Acción | Teclado | Táctil |
 |---|---|---|
-| Saltar / iniciar | Espacio, ↑, W, Enter | Tocar o clic en el juego |
-| Pausa | P o Esc | Botón ⏸ |
+| Cambiar de carril | ← → o A D | Deslizar o botones ◀ ▶ |
+| Escupir / empezar | Espacio, ↑, W, Enter | Tocar la pantalla o 💦 |
+| Cholita Inspectora (cuando la barra está llena) | E | Botón 👒 |
+| Pausa | P o Esc | ⏸ |
+
+## Reglas
+| Situación | Resultado |
+|---|---|
+| Multar a un infractor | +100 (+20 por racha) y carga la barra de la Cholita |
+| Multar a quien cumple | −50 |
+| Escupir a una ambulancia | −150 |
+| Un infractor pasa bajo la pasarela | −1 vida (3 vidas) |
+| Cholita Inspectora | Frena el tráfico y multa a todos los infractores visibles |
 
 ## Estructura
 ```
 src/
   main.js, App.vue          Arranque de Vue
-  components/GameView.vue   Monta el juego, HUD, comunicación Vue <-> juego, limpieza
+  components/GameView.vue   Monta el juego, HUD, menú, fin, créditos; comunicación Vue <-> juego; limpieza
+  assets/img/               Foto del Illimani y texturas (ver créditos)
   game/
-    Game.js                 Renderer, cámara, bucle, resize, cambio de escenas
+    Game.js                 Renderer, cámara, bucle, resize, cambio de escenas, comandos
+    config.js               Constantes del mundo (carriles, semáforo, pasarela)
+    assets.js               Carga de imágenes (fase preload) con caché
     scenes/                 BaseScene (preload/create/update), MenuScene, PlayScene, EndScene
-    utils/                  Parallax, textures (procedurales), input, sfx, storage, emitter
+    world/World.js          Avenida, cebra, semáforo, pasarela, casas, teleférico, luces y niebla
+    systems/Traffic.js      Vehículos, frenado, colas, infracciones y peatones
+    models/                 Llama, vehículos (auto, trufi, minibús, moto, ambulancia), personas y cholitas
+    utils/                  Parallax, texturas por código, input, sonidos, almacenamiento, emisor de eventos
+    data/contenido.js       Textos editables: infracciones, consejos, chistes, rutas y tiendas
 docs/                       Enunciado de la tarea
 ```
 
@@ -39,10 +66,10 @@ docs/                       Enunciado de la tarea
 | Req. | Dónde |
 |---|---|
 | R1 Escenas modulares | `src/game/scenes/` (menú, juego, fin) |
-| R2 Interacción, física, puntaje | `PlayScene.js` (gravedad, salto, colisiones), HUD en `GameView.vue` |
-| R3 Parallax 3D | `utils/Parallax.js` (6 capas en Z) |
-| R4 Escalamiento | `Game.resize()` + `ResizeObserver`, pixel ratio ≤ 2 |
-| R5 Vue | `GameView.vue` |
+| R2 Interacción, física y puntaje | Escupitajo parabólico con gravedad y colisión esfera–caja (`PlayScene.js`), frenado de vehículos (`Traffic.js`), HUD |
+| R3 Parallax 3D | `utils/Parallax.js`: foto del Illimani y nubes con factor de parallax, más teleférico, ciudad y pasarela en 3D real |
+| R4 Escalamiento | `Game.resize()` + `ResizeObserver`, pixel ratio ≤ 2, FOV horizontal conservado en vertical |
+| R5 Vue | `GameView.vue` (eventos del juego → HUD; botones → `game.command()`) |
 | R6 Persistencia | `utils/storage.js` (localStorage) |
 | R7 README | este archivo |
 
@@ -50,4 +77,7 @@ docs/                       Enunciado de la tarea
 Ver [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Créditos
-Integrantes: _completar_. Docente: Ing. Juan Gabriel Lazcano Balanza. Arte generado con código (Canvas 2D); emojis del sistema.
+- Integrantes: _completar_. Docente: Ing. Juan Gabriel Lazcano Balanza.
+- Foto de fondo: ["Nevado del Illimani desde El Alto"](https://commons.wikimedia.org/wiki/File:Nevado_del_Illimani_desde_El_Alto.jpg), Qhanaaru, Wikimedia Commons, **CC0**.
+- Texturas: Asphalt031 y Bricks105 de [ambientCG.com](https://ambientcg.com), **CC0**.
+- Modelos 3D, sonidos (WebAudio), letreros, wiphala y aguayo: hechos con código por el grupo.

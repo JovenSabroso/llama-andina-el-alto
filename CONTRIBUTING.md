@@ -19,9 +19,11 @@ gh pr create --fill          # el otro revisa y hace merge
 
 ## Para evitar conflictos
 Repartir por archivos. Sugerencia de reparto:
-- **Persona A:** `src/game/scenes/PlayScene.js` (mecánicas, dificultad), `utils/sfx.js`.
-- **Persona B:** `src/game/utils/textures.js` y `Parallax.js` (arte, capas), `MenuScene`/`EndScene`, `GameView.vue` (HUD).
-- **Compartido, avisar antes de tocar:** `Game.js`, `README.md`, `package.json`.
+- **Programación:** `scenes/PlayScene.js` (reglas, puntaje), `systems/Traffic.js` (tráfico, dificultad), `utils/sfx.js`.
+- **Arte y escenario:** `models/` (llama, vehículos, personas), `world/World.js`, `utils/Parallax.js`, `utils/textures.js`.
+- **Interfaz:** `components/GameView.vue` (menú, HUD, fin), `MenuScene`/`EndScene`.
+- **Documentación:** solo `docs/`. Textos del juego en `src/game/data/contenido.js`.
+- **Compartido, avisar antes de tocar:** `Game.js`, `config.js`, `README.md`, `package.json`.
 
 ## Si hay conflicto
 `git rebase origin/main`, resolver archivo por archivo, `git add`, `git rebase --continue`. Si hay duda, preguntar antes de forzar nada.

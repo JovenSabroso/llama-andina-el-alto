@@ -1,80 +1,79 @@
-// Efecto 3D con parallax (R3): 6 planos a distinta profundidad en el eje Z.
+// Efecto 3D con parallax (R3). Capas de fondo, de la más lejana a la más cercana:
 //
-// Idea clave: todos los planos avanzan con la MISMA velocidad en unidades de
-// mundo, pero cada plano está a distinta distancia de la cámara perspectiva.
-// Un plano lejano debe ser más grande para llenar la pantalla, así que su
-// textura recorre más mundo por cada "tile" y en pantalla se ve más lento.
-// El parallax sale de la geometría, no de números inventados por capa.
+//   1. Foto del Illimani desde El Alto   dist 520  p = 0.04
+//   2. Nubes (con deriva propia)          dist 440  p = 0.10
+//   3. Teleférico (objeto 3D, World.js)   z = -140  perspectiva real
+//   4. Avenida y casas (3D)               z 0..-235 perspectiva real
+//   5. Pasarela + llama (primer plano)    z = 0     perspectiva real
+//
+// Las capas 3-5 son geometría 3D: la cámara en perspectiva produce el parallax
+// sola cuando se mueve. Las capas 1-2 son planos lejanos; si fueran 100% físicos
+// a 500 m casi no se moverían, así que su desplazamiento se fija con un factor p:
+// "se mueven p veces lo que se movería un objeto a 20 m". Así cada capa tiene
+// una velocidad aparente distinta y controlada.
 import * as THREE from 'three'
-import {
-  makeSky,
-  makeMountains,
-  makeCity,
-  makeTeleferico,
-  makeGround,
-  makeForeground,
-  TILE_W,
-  TILE_H,
-  GROUND_FRAC,
-} from './textures.js'
+import { ILLIMANI_HORIZON } from '../assets.js'
+import { makeCloudsTexture, makeSkyFallback } from './textures.js'
 
-const OVERSCAN = 1.12 // los planos son un poco más grandes que la pantalla (margen para el balanceo de cámara)
-const TILE_ASPECT = TILE_W / TILE_H
-
-// z negativo = lejos de la cámara; z positivo = delante del jugador (z = 0).
-const LAYERS = [
-  { name: 'cielo', z: -90, make: makeSky, order: 0, extra: 0.5 },
-  { name: 'montañas', z: -60, make: makeMountains, order: 1, extra: 1 },
-  { name: 'ciudad', z: -32, make: makeCity, order: 2, extra: 1 },
-  { name: 'teleférico', z: -14, make: makeTeleferico, order: 3, extra: 1 },
-  { name: 'suelo', z: 0, make: makeGround, order: 4, extra: 1 },
-  { name: 'primer plano', z: 8, make: makeForeground, order: 50, extra: 1 },
-]
+const REF_DIST = 20
+const deg = THREE.MathUtils.degToRad
 
 export class Parallax {
-  constructor(parent) {
-    this.group = new THREE.Group()
-    parent.add(this.group)
-    this.layers = LAYERS.map((def) => {
-      const texture = def.make()
-      const material = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        depthWrite: false,
-        depthTest: false,
-      })
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material)
-      mesh.position.z = def.z
-      mesh.renderOrder = def.order
-      this.group.add(mesh)
-      return { def, mesh, texture, tileWorldW: 1 }
+  constructor(root, assets) {
+    this.layers = []
+    const photo = assets.illimani || makeSkyFallback()
+    const photoAspect = assets.illimani ? photo.image.width / photo.image.height : 1.6
+    this._addLayer({ name: 'illimani', dist: 520, p: 0.04, map: photo, aspect: photoAspect, horizon: assets.illimani ? ILLIMANI_HORIZON : 0.15, order: -20 })
+    this._addLayer({ name: 'nubes', dist: 440, p: 0.1, map: makeCloudsTexture(), aspect: null, horizon: 0, order: -19, transparent: true, drift: 0.004 })
+    root.add(...this.layers.map((l) => l.mesh))
+  }
+
+  _addLayer(cfg) {
+    const material = new THREE.MeshBasicMaterial({
+      map: cfg.map,
+      fog: false, // la niebla no debe tapar el fondo
+      depthWrite: false,
+      transparent: !!cfg.transparent,
     })
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material)
+    mesh.renderOrder = cfg.order
+    mesh.frustumCulled = false
+    this.layers.push({ ...cfg, mesh, offY: 0 })
   }
 
-  /** Recalcula el tamaño de cada plano para que llene la vista (llamar en cada resize). */
+  /** Tamaño de cada plano para cubrir la vista (llamar al cambiar fov o aspecto). */
   layout(camera) {
-    const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+    const dir = camera.getWorldDirection(new THREE.Vector3())
+    const pitch = Math.asin(-dir.y) // cuánto mira hacia abajo
+    const halfV = deg(camera.fov / 2)
+    const halfH = Math.atan(Math.tan(halfV) * camera.aspect)
+    const topAngle = Math.min(deg(80), Math.max(0, halfV - pitch) + deg(4))
     for (const L of this.layers) {
-      const dist = camera.position.z - L.def.z
-      const h = 2 * dist * tan * OVERSCAN
-      const w = h * camera.aspect
+      const D = L.dist
+      const needW = 2 * D * Math.tan(halfH) * 1.25 + 40
+      const yHorizon = -D * Math.tan(deg(0.8)) // un poco bajo la línea de los ojos
+      const needAbove = D * Math.tan(topAngle) - yHorizon
+      let w, h
+      if (L.aspect) {
+        h = Math.max(needW / L.aspect, needAbove / (1 - L.horizon))
+        w = h * L.aspect
+      } else {
+        w = needW
+        h = needAbove
+        L.map.repeat.x = w / (h * 2) // nubes sin deformar (textura 2:1)
+      }
       L.mesh.scale.set(w, h, 1)
-      L.mesh.position.y = 0
-      L.texture.repeat.x = w / (h * TILE_ASPECT) // cuántos tiles caben en el ancho
-      L.tileWorldW = h * TILE_ASPECT // ancho de un tile en unidades de mundo
+      L.offY = yHorizon + h * (0.5 - L.horizon)
     }
   }
 
-  /** Desplaza todas las capas: speed está en unidades de mundo por segundo. */
-  update(dt, speed) {
+  /** Coloca las capas respecto de la cámara y anima la deriva de las nubes. */
+  update(dt, camera) {
+    const c = camera.position
     for (const L of this.layers) {
-      L.texture.offset.x = (L.texture.offset.x + (speed * L.def.extra * dt) / L.tileWorldW) % 1
+      const pEff = (L.p * L.dist) / REF_DIST
+      L.mesh.position.set(c.x * (1 - pEff), c.y + L.offY, c.z - L.dist)
+      if (L.drift) L.map.offset.x = (L.map.offset.x + L.drift * dt) % 1
     }
-  }
-
-  /** Fracción de la altura visible (en z=0) donde queda el borde superior del suelo. */
-  static groundTopFraction() {
-    // el plano mide OVERSCAN * altura visible, centrado: el suelo ocupa GROUND_FRAC de él.
-    return -0.5 * OVERSCAN + GROUND_FRAC * OVERSCAN
   }
 }
