@@ -34,6 +34,10 @@ Para pruebas: `?scene=play` o `?scene=end` en la URL abre esa escena directament
 | Cholita Inspectora (cuando la barra está llena) | E | Botón 👒 |
 | Pausa | P o Esc | ⏸ |
 
+**Recargar (F5) no reinicia:** el juego guarda su estado en `sessionStorage` cada 0,5 s y al salir de la página
+(`utils/session.js`); al recargar continúa en la misma escena, con el mismo puntaje, vidas, carril, semáforo y vehículos.
+Cerrar la pestaña sí empieza de cero.
+
 ## Reglas
 | Situación | Resultado |
 |---|---|

@@ -524,6 +524,12 @@ export class World {
     this._applyLight()
   }
 
+  /** Fija el semáforo sin avisar (restauración tras F5). */
+  setLight(state, timer) {
+    this.light = { state, timer }
+    for (const [name, mat] of Object.entries(this.lamps)) mat.emissiveIntensity = name === state ? 2.5 : 0.05
+  }
+
   _applyLight() {
     for (const [name, mat] of Object.entries(this.lamps)) {
       mat.emissiveIntensity = name === this.light.state ? 2.5 : 0.05

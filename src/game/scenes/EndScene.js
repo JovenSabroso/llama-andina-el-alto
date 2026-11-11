@@ -10,8 +10,16 @@ export class EndScene extends BaseScene {
     this.createStage({ demo: true })
     this.llama.dance = true
     const defaults = { score: 0, record: false, accuracy: 0, fined: 0, escaped: 0, wrong: 0 }
-    this.game.emit('end', { ...defaults, ...this.data, tip: pick(CONSEJOS), joke: pick(CHISTES) })
+    // tras F5 se conservan el mismo consejo y el mismo chiste
+    this.tip = this.data.restore?.tip ?? pick(CONSEJOS)
+    this.joke = this.data.restore?.joke ?? pick(CHISTES)
+    const { restore, ...data } = this.data
+    this.game.emit('end', { ...defaults, ...data, tip: this.tip, joke: this.joke })
     this.update(0)
+  }
+
+  snapshot() {
+    return { tip: this.tip, joke: this.joke }
   }
 
   update(dt) {

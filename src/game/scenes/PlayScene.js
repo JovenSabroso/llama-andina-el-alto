@@ -53,12 +53,47 @@ export class PlayScene extends BaseScene {
     this.splatGeo = new THREE.CircleGeometry(0.9, 16)
     this.splatGeo.rotateX(-Math.PI / 2)
 
+    if (this.data.restore) this._restore(this.data.restore)
     this._updateCamera(1)
-    this.game.emit('score', 0)
+    this.game.emit('score', this.score)
     this.game.emit('lives', this.lives)
-    this.game.emit('combo', 0)
-    this.game.emit('power', 0)
+    this.game.emit('combo', this.combo)
+    this.game.emit('power', this.power)
     this.game.emit('light', this.world.light.state)
+  }
+
+  /** Estado de la partida para continuar tras F5. */
+  snapshot() {
+    return {
+      lane: this.lane,
+      score: this.score,
+      lives: this.lives,
+      combo: this.combo,
+      power: this.power,
+      stats: this.stats,
+      camX: this.camX,
+      light: { ...this.world.light },
+      traffic: this.traffic.snapshot(),
+    }
+  }
+
+  _restore(s) {
+    Object.assign(this, {
+      lane: s.lane ?? 1,
+      score: s.score ?? 0,
+      lives: s.lives ?? MAX_LIVES,
+      combo: s.combo ?? 0,
+      power: s.power ?? 0,
+      camX: s.camX ?? 0,
+    })
+    Object.assign(this.stats, s.stats)
+    this.llama.group.position.x = LANES[this.lane]
+    if (s.light) {
+      this.world.setLight(s.light.state, s.light.timer)
+      this.traffic.lastLight = s.light.state
+    }
+    if (s.traffic) this.traffic.restore(s.traffic)
+    if (this.lives <= 0) this.dying = 0.5 // se recargó justo al perder: termina el turno
   }
 
   onCommand(cmd) {

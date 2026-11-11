@@ -179,7 +179,8 @@ export class Llama {
     }
 
     // gira el cuerpo hacia donde camina
-    const targetYaw = this.dance ? Math.PI + Math.sin(t * 3) * 0.8 : -walkDir * 0.45 // al bailar mira a la cámara
+    // al bailar mira a la cámara; baseYaw = hacia dónde mira en reposo (π = hacia la cámara)
+    const targetYaw = this.dance ? Math.PI + Math.sin(t * 3) * 0.8 : (this.baseYaw || 0) - walkDir * 0.45
     this.group.rotation.y += (targetYaw - this.group.rotation.y) * Math.min(1, dt * 10)
 
     // cuello: balanceo + latigazo del escupitajo

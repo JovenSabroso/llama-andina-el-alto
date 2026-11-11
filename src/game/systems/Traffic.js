@@ -94,6 +94,47 @@ export class Traffic {
     this.vehicles.push(v)
   }
 
+  /** Estado serializable del tráfico (para continuar tras F5). */
+  snapshot() {
+    return {
+      elapsed: this.elapsed,
+      spawnTimer: this.spawnTimer,
+      freeze: this.freeze,
+      vehicles: this.vehicles.map((v) => ({
+        type: v.type,
+        lane: v.lane,
+        z: v.z,
+        speed: v.speed,
+        cruise: v.cruise,
+        infraction: v.infraction,
+        infractor: v.infractor,
+        ignoresRed: v.ignoresRed,
+        fined: v.fined,
+        escaped: v.escaped,
+      })),
+    }
+  }
+
+  /** Reemplaza los vehículos actuales por los guardados. */
+  restore(s) {
+    for (const v of this.vehicles) {
+      this.removeBubble(v)
+      this._disposeGroup(v.model.group)
+    }
+    this.vehicles = []
+    this.elapsed = s.elapsed || 0
+    this.spawnTimer = s.spawnTimer || 0.5
+    this.freeze = s.freeze || 0
+    for (const d of s.vehicles || []) {
+      const model = createVehicle(d.type, { helmet: d.infraction !== 'casco' })
+      const v = { ...d, model, len: model.len, width: model.width, height: model.height, bubble: null }
+      model.group.position.set(LANES[d.lane], 0, d.z)
+      this.root.add(model.group)
+      if (v.infractor && !v.fined && !v.escaped) this._addBubble(v, v.infraction)
+      this.vehicles.push(v)
+    }
+  }
+
   _addBubble(v, key) {
     const { texture, aspect } = this.bubbleTex[key]
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, sizeAttenuation: false, depthTest: false }))

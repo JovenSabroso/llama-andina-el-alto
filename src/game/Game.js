@@ -6,6 +6,7 @@ import * as THREE from 'three'
 import { Emitter } from './utils/emitter.js'
 import { Input } from './utils/input.js'
 import { loadBest, saveBest } from './utils/storage.js'
+import { loadSession, saveSession } from './utils/session.js'
 import { sfx } from './utils/sfx.js'
 import { MenuScene } from './scenes/MenuScene.js'
 import { PlayScene } from './scenes/PlayScene.js'
@@ -54,12 +55,29 @@ export class Game extends Emitter {
     const params = new URLSearchParams(window.location.search)
     const q = params.get('scene')
     if (params.has('debug')) window.__game = this // inspección desde la consola del navegador
-    this.start(SCENES[q] ? q : 'menu')
+
+    // F5: si hay una partida guardada en esta pestaña, se continúa exactamente ahí
+    const snap = loadSession()
+    if (snap && SCENES[snap.scene]) {
+      this.start(snap.scene, { ...snap.data, restore: snap.state }).then(() => {
+        if (snap.paused) this.setPaused(true)
+      })
+    } else {
+      this.start(SCENES[q] ? q : 'menu')
+    }
+    this._onHide = () => this.save()
+    window.addEventListener('pagehide', this._onHide) // guarda justo antes de recargar o salir
+
     const loop = (timestamp) => {
       this._raf = requestAnimationFrame(loop)
       this.timer.update(timestamp)
       const dt = Math.min(this.timer.getDelta(), 0.05) // tope: evita saltos al volver de otra pestaña
       this.time += dt
+      this._saveT = (this._saveT || 0) + dt
+      if (this._saveT > 0.5) {
+        this._saveT = 0
+        this.save() // guardado periódico por si el navegador no avisa al recargar
+      }
       if (this.current) {
         if (!this.paused) this.current.update(dt)
         this.renderer.render(this.current.root, this.camera)
@@ -91,6 +109,13 @@ export class Game extends Emitter {
 
   restart() {
     return this.start('play')
+  }
+
+  /** Guarda el estado de la escena actual para recuperarlo tras F5. */
+  save() {
+    if (!this.current?.snapshot) return
+    const { restore, ...data } = this.current.data // no guardar la restauración anterior
+    saveSession({ scene: this.sceneName, data, state: this.current.snapshot(), paused: this.paused })
   }
 
   setPaused(value) {
@@ -141,6 +166,7 @@ export class Game extends Emitter {
     cancelAnimationFrame(this._raf)
     this._token++
     this._ro.disconnect()
+    window.removeEventListener('pagehide', this._onHide)
     this.input.dispose()
     this.timer.dispose()
     this.current?.destroy()
