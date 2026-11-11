@@ -82,5 +82,10 @@ Ver [CONTRIBUTING.md](CONTRIBUTING.md).
 - Foto de fondo: ["Nevado del Illimani desde El Alto"](https://commons.wikimedia.org/wiki/File:Nevado_del_Illimani_desde_El_Alto.jpg), Qhanaaru, Wikimedia Commons, **CC0**.
 - Texturas: Asphalt031 y Bricks105 de [ambientCG.com](https://ambientcg.com), **CC0**.
 - Modelos 3D, sonidos (WebAudio), letreros, wiphala, aguayo, baches y propaganda: hechos con código por el grupo.
-- **La propaganda política del juego es ficticia y en tono de parodia** (partidos, siglas y candidatos inventados en
+- Fotos de alcaldes (Wikimedia Commons, **CC BY 2.0**):
+  ["Eliser Roca, Así Es Mi Pueblo"](https://commons.wikimedia.org/wiki/File:Eliser_Roca,_As%C3%AD_Es_Mi_Pueblo.jpg), autor: Asi Es Mi Pueblo;
+  ["Mónica Eva Copa Murga (Official Photo, 2015)"](https://commons.wikimedia.org/wiki/File:M%C3%B3nica_Eva_Copa_Murga_(Official_Photo,_2015)_Alejandra_Vaca,_Chamber_of_Senators_of_Bolivia.jpg),
+  autora: Alejandra Vaca, Cámara de Senadores de Bolivia. Los afiches de alcaldes reales solo muestran datos públicos
+  (nombre, cargo, periodo, sigla), sin lemas inventados.
+- **El resto de la propaganda política del juego es ficticia y en tono de parodia** (partidos, siglas y candidatos inventados en
   `src/game/data/contenido.js`); no representa a ningún partido ni persona real.

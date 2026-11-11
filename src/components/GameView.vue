@@ -89,6 +89,7 @@ const restart = () => game?.restart()
       <p>Tarea H4_T4 · Programación Gráfica y Multimedia I · UNIFRANZ El Alto<br />Docente: Ing. Juan Gabriel Lazcano Balanza</p>
       <p class="small">
         Foto de fondo: "Nevado del Illimani desde El Alto", Qhanaaru, Wikimedia Commons (CC0).<br />
+        Fotos de alcaldes (CC BY 2.0, Wikimedia Commons): Eliser Roca por Asi Es Mi Pueblo; Eva Copa por Alejandra Vaca, Cámara de Senadores.<br />
         Texturas de asfalto y ladrillo: ambientCG.com (CC0).<br />
         Modelos 3D, sonidos, letreros, wiphala y aguayo: hechos con código por el grupo.
       </p>

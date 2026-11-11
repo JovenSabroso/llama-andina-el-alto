@@ -48,6 +48,31 @@ export const PROPAGANDA = [
   { sigla: 'ULL', nombre: 'UNIÓN LLAMERA', lema: 'Menos promesas, más educación vial', bg: '#e8f6ff', main: '#0b7285', accent: '#c1121f' },
 ]
 
+// Alcaldes REALES de El Alto. Solo datos verificables y neutrales (sin lemas inventados).
+// Fotos de Wikimedia Commons con licencia CC BY 2.0: el crédito va impreso en el afiche y en README.md.
+export const ALCALDES = [
+  {
+    id: 'roca',
+    nombre: 'ELISER ROCA',
+    cargo: 'ALCALDE DE EL ALTO',
+    periodo: '2026 - 2031',
+    sigla: 'UPC',
+    main: '#1d3f8f',
+    accent: '#fcbf49',
+    credito: 'Foto: Asi Es Mi Pueblo · CC BY 2.0',
+  },
+  {
+    id: 'copa',
+    nombre: 'EVA COPA',
+    cargo: 'ALCALDESA DE EL ALTO',
+    periodo: '2021 - 2026',
+    sigla: 'JALLALLA',
+    main: '#7b2cbf',
+    accent: '#fcbf49',
+    credito: 'Foto: Alejandra Vaca, Cámara de Senadores · CC BY 2.0',
+  },
+]
+
 // Pasacalles (pancartas que cruzan la avenida).
 export const PASACALLES = [
   '¡BIENVENIDOS A LA 16 DE JULIO!',

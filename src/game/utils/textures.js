@@ -261,6 +261,57 @@ export function makePosterTexture(p) {
   return canvasTexture(c)
 }
 
+/** Dibuja una imagen recortada para llenar un rectángulo (como object-fit: cover). */
+function drawCover(g, img, x, y, w, h, focusY = 0.3) {
+  const s = Math.max(w / img.width, h / img.height)
+  const sw = w / s
+  const sh = h / s
+  const sx = (img.width - sw) / 2
+  const sy = (img.height - sh) * focusY
+  g.drawImage(img, sx, sy, sw, sh, x, y, w, h)
+}
+
+/**
+ * Afiche de un alcalde real (datos de contenido.js + foto CC BY).
+ * wide = gigantografía horizontal; si no, afiche vertical para postes.
+ */
+export function makeMayorPosterTexture(a, img, { wide = false } = {}) {
+  const W = wide ? 1024 : 384
+  const H = wide ? 512 : 528
+  const c = makeCanvas(W, H)
+  const g = c.getContext('2d')
+  g.fillStyle = a.main
+  g.fillRect(0, 0, W, H)
+  const photo = wide ? [24, 24, 400, H - 48] : [18, 18, W - 36, 300]
+  if (img) drawCover(g, img, ...photo)
+  else {
+    g.fillStyle = '#ccc'
+    g.fillRect(...photo)
+  }
+  g.strokeStyle = a.accent
+  g.lineWidth = 6
+  g.strokeRect(...photo)
+  g.fillStyle = '#ffffff'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  const tx = wide ? 724 : W / 2
+  const tw = wide ? 560 : W - 30
+  const lines = wide
+    ? [[a.cargo, 44, 900, 110], [a.nombre, 92, 900, 215], [a.periodo, 46, 700, 305], [a.sigla, 64, 900, 400]]
+    : [[a.nombre, 46, 900, 360], [a.cargo, 26, 800, 405], [a.periodo, 26, 700, 440], [a.sigla, 38, 900, 486]]
+  for (const [text, px, weight, y] of lines) {
+    g.fillStyle = text === a.sigla ? a.accent : '#ffffff'
+    fitText(g, text, tw, px, weight)
+    g.fillText(text, tx, y)
+  }
+  // crédito de la foto (obligatorio por la licencia CC BY)
+  g.fillStyle = 'rgba(255,255,255,0.8)'
+  g.font = `600 ${wide ? 18 : 13}px ${FONT}`
+  g.textAlign = wide ? 'right' : 'center'
+  g.fillText(a.credito, wide ? W - 16 : W / 2, H - (wide ? 18 : 12))
+  return canvasTexture(c)
+}
+
 /** Bache: hueco irregular con grietas (fondo transparente). */
 export function makePotholeTexture() {
   const c = makeCanvas(256, 256)

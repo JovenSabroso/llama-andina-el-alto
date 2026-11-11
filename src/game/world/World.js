@@ -2,8 +2,9 @@
 // pasarela peatonal, casas de ladrillo con fierros en el techo, teleférico.
 import * as THREE from 'three'
 import { LANES, ROAD_HALF, STOP_Z, ZEBRA, DECK_Y, DECK_TOP, LIGHT_TIMES } from '../config.js'
-import { TIENDAS, PROPAGANDA, PASACALLES, CARTELES_BACHE } from '../data/contenido.js'
+import { TIENDAS, PROPAGANDA, PASACALLES, CARTELES_BACHE, ALCALDES } from '../data/contenido.js'
 import {
+  makeMayorPosterTexture,
   makeSignTexture,
   makeSidewalkTexture,
   makeWiphalaTexture,
@@ -12,6 +13,9 @@ import {
   makePotholeTexture,
   rng,
 } from '../utils/textures.js'
+
+// z de las gigantografías de alcaldes (los carteles de baches no se ponen cerca)
+const BILLBOARD_Z = [-26, -52]
 
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra })
 
@@ -89,16 +93,55 @@ export class World {
       banner.rotation.x = -0.08 // cuelga un poco
       this.add(banner)
     })
-    // afiches en postes (miran hacia la cámara)
+    // afiches en postes (miran hacia la cámara): cada tercer afiche es de un alcalde real
+    const fotos = this.assets.fotos || {}
+    const mayorMats = ALCALDES.map(
+      (a) => new THREE.MeshStandardMaterial({ map: makeMayorPosterTexture(a, fotos[a.id]), roughness: 0.8 }),
+    )
     let k = 0
     for (let z = 4; z > -240; z -= 18) {
       for (const x of [-6.3, 6.3]) {
         if (z > 0 || r() < 0.35) continue
-        const poster = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 1.17), this._posterMat(k++))
+        const mayor = k % 3 === 0
+        const poster = mayor
+          ? new THREE.Mesh(new THREE.PlaneGeometry(0.95, 1.31), mayorMats[(k / 3) % ALCALDES.length])
+          : new THREE.Mesh(new THREE.PlaneGeometry(0.85, 1.17), this._posterMat(k))
         poster.position.set(x, 2.6, z + 0.13)
         this.add(poster)
+        k++
       }
     }
+    this._gigantografias(fotos)
+  }
+
+  /** Gigantografías de los alcaldes sobre las aceras, giradas hacia la avenida. */
+  _gigantografias(fotos) {
+    const metal = std(0x55585e, { metalness: 0.4, roughness: 0.5 })
+    ALCALDES.forEach((a, i) => {
+      const s = i % 2 === 0 ? -1 : 1 // una a cada lado de la avenida
+      const x = s * 8.4
+      const z = BILLBOARD_Z[i]
+      const group = new THREE.Group()
+      group.position.set(x, 0, z)
+      group.rotation.y = -s * 0.55 // mira hacia el centro de la avenida y la cámara
+      group.scale.setScalar(1.3)
+      for (const px of [-1.8, 1.8]) {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 8.6, 8), metal)
+        post.position.set(px, 4.3, -0.15)
+        post.castShadow = true
+        group.add(post)
+      }
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(5.6, 2.9, 0.2), metal)
+      frame.position.set(0, 7.7, -0.12)
+      frame.castShadow = true
+      const panel = new THREE.Mesh(
+        new THREE.PlaneGeometry(5.4, 2.7),
+        new THREE.MeshStandardMaterial({ map: makeMayorPosterTexture(a, fotos[a.id], { wide: true }), roughness: 0.7 }),
+      )
+      panel.position.set(0, 7.7, 0)
+      group.add(frame, panel)
+      this.add(group)
+    })
   }
 
   /**
@@ -177,7 +220,7 @@ export class World {
         t.rotation.x = -Math.PI / 2 + 0.25
         t.castShadow = true
         this.add(t)
-      } else if (deco === 4) {
+      } else if (deco === 4 && BILLBOARD_Z.every((bz) => Math.abs(b.z - bz) > 10)) {
         // cartel en la orilla de la calzada, mirando a la cámara
         const sx = Math.sign(b.x || 1) * (ROAD_HALF - 0.35)
         const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.3, 0.08), wood)

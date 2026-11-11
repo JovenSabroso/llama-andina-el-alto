@@ -5,6 +5,8 @@ import illimaniUrl from '../assets/img/illimani_el_alto.jpg'
 import asfaltoUrl from '../assets/img/asfalto_color.jpg'
 import ladrilloUrl from '../assets/img/ladrillo_color.jpg'
 import ladrilloNormalUrl from '../assets/img/ladrillo_normal.jpg'
+import rocaUrl from '../assets/img/alcalde_eliser_roca.jpg'
+import copaUrl from '../assets/img/alcaldesa_eva_copa.jpg'
 
 const loader = new THREE.TextureLoader()
 let cache = null
@@ -55,11 +57,15 @@ export function loadAssets() {
       load(asfaltoUrl, { repeat: true }),
       load(ladrilloUrl, { repeat: true }),
       load(ladrilloNormalUrl, { srgb: false, repeat: true }),
-    ]).then(([illimani, asfalto, ladrillo, ladrilloNormal]) => ({
+      load(rocaUrl),
+      load(copaUrl),
+    ]).then(([illimani, asfalto, ladrillo, ladrilloNormal, roca, copa]) => ({
       illimani,
       asfalto,
       ladrillo,
       ladrilloNormal,
+      // fotos de alcaldes: se usan como imagen dentro de los afiches (canvas)
+      fotos: { roca: roca?.image ?? null, copa: copa?.image ?? null },
       horizonColor: illimani
         ? bandColor(illimani.image, ILLIMANI_HORIZON - 0.14, ILLIMANI_HORIZON - 0.02) // franja de la ciudad bajo la cordillera
         : new THREE.Color(0xc9cdd3),
