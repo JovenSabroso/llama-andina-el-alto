@@ -26,6 +26,9 @@ export class PlayScene extends BaseScene {
         onEscape: (v) => this._escaped(v),
         onRedRun: () => sfx.honk(),
         onAmbulance: () => sfx.siren(),
+        onBump: (v) => {
+          if (v.z > -45) sfx.bump() // solo se oye si está cerca
+        },
       },
     })
     this.lane = 1

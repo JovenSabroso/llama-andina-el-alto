@@ -54,6 +54,11 @@ export const sfx = {
     tone(220, 0.12, { type: 'triangle', gain: 0.08, slideTo: 90 })
   },
   splat: () => noise(0.25, { freq: 600, gain: 0.3 }),
+  // ¡clonk! de un vehículo cayendo en un bache
+  bump: () => {
+    tone(75, 0.18, { type: 'square', gain: 0.09, slideTo: 45 })
+    noise(0.12, { freq: 300, gain: 0.2 })
+  },
   // silbato de tránsito
   whistle: () => {
     tone(2600, 0.16, { type: 'square', gain: 0.05 })

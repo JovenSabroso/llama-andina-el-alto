@@ -42,6 +42,7 @@ Para pruebas: `?scene=play` o `?scene=end` en la URL abre esa escena directament
 | Escupir a una ambulancia | −150 |
 | Un infractor pasa bajo la pasarela | −1 vida (3 vidas) |
 | Cholita Inspectora | Frena el tráfico y multa a todos los infractores visibles |
+| Baches | Los vehículos que caen en uno saltan y frenan (y cambia el momento del impacto del escupitajo) |
 
 ## Estructura
 ```
@@ -80,4 +81,6 @@ Ver [CONTRIBUTING.md](CONTRIBUTING.md).
 - Integrantes: _completar_. Docente: Ing. Juan Gabriel Lazcano Balanza.
 - Foto de fondo: ["Nevado del Illimani desde El Alto"](https://commons.wikimedia.org/wiki/File:Nevado_del_Illimani_desde_El_Alto.jpg), Qhanaaru, Wikimedia Commons, **CC0**.
 - Texturas: Asphalt031 y Bricks105 de [ambientCG.com](https://ambientcg.com), **CC0**.
-- Modelos 3D, sonidos (WebAudio), letreros, wiphala y aguayo: hechos con código por el grupo.
+- Modelos 3D, sonidos (WebAudio), letreros, wiphala, aguayo, baches y propaganda: hechos con código por el grupo.
+- **La propaganda política del juego es ficticia y en tono de parodia** (partidos, siglas y candidatos inventados en
+  `src/game/data/contenido.js`); no representa a ningún partido ni persona real.

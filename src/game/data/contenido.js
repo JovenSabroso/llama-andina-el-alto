@@ -37,6 +37,28 @@ export const RUTAS = [
   'SENKATA - 16 DE JULIO',
 ]
 
+// Propaganda política FICTICIA (parodia). Partidos, siglas y candidatos inventados:
+// no representan a ningún partido ni persona real.
+export const PROPAGANDA = [
+  { sigla: 'PSU', nombre: 'DON PROMESAS', lema: '¡Taparemos TODOS los baches!', bg: '#ffffff', main: '#c1121f', accent: '#1b1230' },
+  { sigla: 'MAC', nombre: 'JUANCITO BACHE', lema: 'Asfalto para todos... mañana', bg: '#fcbf49', main: '#1d3f8f', accent: '#c1121f' },
+  { sigla: 'FTL', nombre: 'FRENTE TRUFI LIBRE', lema: 'Parada donde tú quieras', bg: '#ffffff', main: '#2a9d4a', accent: '#1b1230' },
+  { sigla: 'CHP', nombre: 'DOÑA PANCHITA', lema: '¡Chola power! Mercado limpio', bg: '#f4e1ff', main: '#7b2cbf', accent: '#d63384' },
+  { sigla: 'MAP', nombre: 'MOVIMIENTO API', lema: 'Api y buñuelo gratis los lunes', bg: '#ffffff', main: '#6a1b9a', accent: '#f77f00' },
+  { sigla: 'ULL', nombre: 'UNIÓN LLAMERA', lema: 'Menos promesas, más educación vial', bg: '#e8f6ff', main: '#0b7285', accent: '#c1121f' },
+]
+
+// Pasacalles (pancartas que cruzan la avenida).
+export const PASACALLES = [
+  '¡BIENVENIDOS A LA 16 DE JULIO!',
+  'DON PROMESAS CUMPLE (A VECES)',
+  'FERIA 16 DE JULIO: JUEVES Y DOMINGO',
+  'JUANCITO BACHE: ¡OBRAS, NO PALABRAS!',
+]
+
+// Carteles hechos a mano junto a los baches.
+export const CARTELES_BACHE = ['¡OJO BACHE!', 'BACHE DESDE 2019', 'AQUÍ PROMETIERON ASFALTO', 'CUIDADO: CRÁTER']
+
 // Letreros de tiendas en planta baja.
 export const TIENDAS = [
   'SALTEÑAS', 'POLLOS', 'INTERNET', 'FOTOCOPIAS', 'API Y BUÑUELOS',

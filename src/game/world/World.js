@@ -2,8 +2,16 @@
 // pasarela peatonal, casas de ladrillo con fierros en el techo, teleférico.
 import * as THREE from 'three'
 import { LANES, ROAD_HALF, STOP_Z, ZEBRA, DECK_Y, DECK_TOP, LIGHT_TIMES } from '../config.js'
-import { TIENDAS } from '../data/contenido.js'
-import { makeSignTexture, makeSidewalkTexture, makeWiphalaTexture, rng } from '../utils/textures.js'
+import { TIENDAS, PROPAGANDA, PASACALLES, CARTELES_BACHE } from '../data/contenido.js'
+import {
+  makeSignTexture,
+  makeSidewalkTexture,
+  makeWiphalaTexture,
+  makePintaTexture,
+  makePosterTexture,
+  makePotholeTexture,
+  rng,
+} from '../utils/textures.js'
 
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra })
 
@@ -33,8 +41,159 @@ export class World {
     this._road()
     this._pasarela()
     this._buildings()
+    this._propaganda()
+    this._baches()
     this._trafficLight()
     this._teleferico()
+  }
+
+  /** Textura de pinta por partido (se crea una vez y se comparte). */
+  _pintaMat(i) {
+    this._pintaCache ??= new Map()
+    const k = i % PROPAGANDA.length
+    if (!this._pintaCache.has(k)) {
+      this._pintaCache.set(k, new THREE.MeshStandardMaterial({ map: makePintaTexture(PROPAGANDA[k]), roughness: 0.95 }))
+    }
+    return this._pintaCache.get(k)
+  }
+
+  _posterMat(i) {
+    this._posterCache ??= new Map()
+    const k = i % PROPAGANDA.length
+    if (!this._posterCache.has(k)) {
+      this._posterCache.set(k, new THREE.MeshStandardMaterial({ map: makePosterTexture(PROPAGANDA[k]), roughness: 0.8 }))
+    }
+    return this._posterCache.get(k)
+  }
+
+  /** Pasacalles cruzando la avenida y afiches de candidatos en los postes. */
+  _propaganda() {
+    const r = rng(99)
+    const rope = std(0x2b2b2b)
+    PASACALLES.forEach((text, i) => {
+      const z = -32 - i * 36 // a la altura de los postes de luz
+      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 12.6, 4), rope)
+      cord.rotation.z = Math.PI / 2
+      cord.position.set(0, 6.95, z)
+      this.add(cord)
+      const p = PROPAGANDA[i % PROPAGANDA.length]
+      const banner = new THREE.Mesh(
+        new THREE.PlaneGeometry(10.5, 1.2),
+        new THREE.MeshStandardMaterial({
+          map: makeSignTexture(text, { bg: p.main, fg: '#ffffff', w: 1024, h: 118, border: p.accent }),
+          side: THREE.DoubleSide,
+          roughness: 0.9,
+        }),
+      )
+      banner.position.set(0, 6.25, z)
+      banner.rotation.x = -0.08 // cuelga un poco
+      this.add(banner)
+    })
+    // afiches en postes (miran hacia la cámara)
+    let k = 0
+    for (let z = 4; z > -240; z -= 18) {
+      for (const x of [-6.3, 6.3]) {
+        if (z > 0 || r() < 0.35) continue
+        const poster = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 1.17), this._posterMat(k++))
+        poster.position.set(x, 2.6, z + 0.13)
+        this.add(poster)
+      }
+    }
+  }
+
+  /**
+   * Baches: decoración + obstáculo. Se guardan en this.baches para que
+   * Traffic haga saltar a los vehículos que pasan encima.
+   */
+  _baches() {
+    const r = rng(123)
+    const tex = makePotholeTexture()
+    const holeMat = new THREE.MeshStandardMaterial({
+      map: tex,
+      transparent: true,
+      depthWrite: false,
+      roughness: 1,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+    })
+    const puddleMat = new THREE.MeshStandardMaterial({
+      color: 0x6f8fb0,
+      roughness: 0.05,
+      metalness: 0.5,
+      transparent: true,
+      opacity: 0.65,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+    })
+    const holeGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2)
+    const puddleGeo = new THREE.CircleGeometry(0.5, 16).rotateX(-Math.PI / 2)
+    this.baches = []
+    const items = []
+    for (let z = 9; z > -205; z -= 2.6 + r() * 4) {
+      if (z < STOP_Z + 2 && z > ZEBRA.z1 - 1.5) continue // la cebra y la línea de pare están "bien pintadas"
+      const lane = Math.floor(r() * 3)
+      const x = LANES[lane] + (r() - 0.5) * 2.2
+      const size = 1.1 + r() * 1.6
+      items.push({ x, z, size, rot: r() * Math.PI * 2, puddle: r() < 0.3 })
+      this.baches.push({ x, z, r: size * 0.45 })
+    }
+    const holes = new THREE.InstancedMesh(holeGeo, holeMat, items.length)
+    const puddles = new THREE.InstancedMesh(puddleGeo, puddleMat, items.filter((b) => b.puddle).length)
+    const m = new THREE.Matrix4()
+    const q = new THREE.Quaternion()
+    const up = new THREE.Vector3(0, 1, 0)
+    let pi = 0
+    items.forEach((b, i) => {
+      q.setFromAxisAngle(up, b.rot)
+      m.compose(new THREE.Vector3(b.x, 0.015, b.z), q, new THREE.Vector3(b.size, 1, b.size * 0.8))
+      holes.setMatrixAt(i, m)
+      if (b.puddle) {
+        m.compose(new THREE.Vector3(b.x, 0.02, b.z), q, new THREE.Vector3(b.size * 0.7, 1, b.size * 0.5))
+        puddles.setMatrixAt(pi++, m)
+      }
+    })
+    holes.receiveShadow = true
+    this.add(holes)
+    this.add(puddles)
+
+    // cono, llanta vieja o cartel hecho a mano en algunos baches
+    const cone = std(0xff6a00, { roughness: 0.6 })
+    const stripe = std(0xffffff)
+    const tire = std(0x151515, { roughness: 0.95 })
+    const wood = std(0x8b5a2b)
+    items.forEach((b, i) => {
+      const deco = i % 5
+      if (deco === 1) {
+        const c = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.75, 10), cone)
+        c.position.set(b.x + 0.3, 0.37, b.z)
+        c.castShadow = true
+        const band = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.12, 10), stripe)
+        band.position.set(b.x + 0.3, 0.42, b.z)
+        this.add(c, band)
+      } else if (deco === 3) {
+        const t = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.16, 8, 16), tire)
+        t.position.set(b.x, 0.12, b.z)
+        t.rotation.x = -Math.PI / 2 + 0.25
+        t.castShadow = true
+        this.add(t)
+      } else if (deco === 4) {
+        // cartel en la orilla de la calzada, mirando a la cámara
+        const sx = Math.sign(b.x || 1) * (ROAD_HALF - 0.35)
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.3, 0.08), wood)
+        post.position.set(sx, 0.65, b.z)
+        const sign = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.5, 0.5),
+          new THREE.MeshStandardMaterial({
+            map: makeSignTexture(CARTELES_BACHE[i % CARTELES_BACHE.length], { bg: '#f4e9d0', fg: '#c1121f', w: 384, h: 128 }),
+            side: THREE.DoubleSide,
+          }),
+        )
+        sign.position.set(sx, 1.25, b.z + 0.05)
+        sign.rotation.z = (r() - 0.5) * 0.2 // torcido, hecho a mano
+        this.add(post, sign)
+      }
+    })
   }
 
   add(obj) {
@@ -226,16 +385,25 @@ export class World {
         b.receiveShadow = true
         this.add(b)
 
-        // ventanas en pisos superiores
-        const per = Math.max(1, Math.floor((len - 1) / 2.2))
-        for (let f = 1; f < floors; f++) {
-          for (let k = 0; k < per; k++) {
-            const wz = cz - ((per - 1) * 2.2) / 2 + k * 2.2
-            windows.push([front - s * 0.05, f * 2.9 + 1.5, wz])
+        const faceRot = s < 0 ? Math.PI / 2 : -Math.PI / 2
+        if (floors >= 2 && len >= 5.5 && r() < 0.45) {
+          // pinta electoral en los pisos superiores (en vez de ventanas)
+          const ph = h - 3.3
+          const pinta = new THREE.Mesh(new THREE.PlaneGeometry(len - 0.6, ph), this._pintaMat(n))
+          pinta.position.set(front - s * 0.03, 3.0 + ph / 2, cz)
+          pinta.rotation.y = faceRot
+          this.add(pinta)
+        } else {
+          // ventanas en pisos superiores
+          const per = Math.max(1, Math.floor((len - 1) / 2.2))
+          for (let f = 1; f < floors; f++) {
+            for (let k = 0; k < per; k++) {
+              const wz = cz - ((per - 1) * 2.2) / 2 + k * 2.2
+              windows.push([front - s * 0.05, f * 2.9 + 1.5, wz])
+            }
           }
         }
         // planta baja: puerta y letrero de tienda
-        const faceRot = s < 0 ? Math.PI / 2 : -Math.PI / 2
         const d = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.1, 1.2), door)
         d.position.set(front - s * 0.05, 1.05, cz + len * 0.25)
         this.add(d)

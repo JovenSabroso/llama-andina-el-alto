@@ -162,6 +162,150 @@ export function makeCloudsTexture() {
   return t
 }
 
+/** Ajusta el tamaño de letra para que el texto quepa en un ancho. */
+function fitText(g, text, maxW, px, weight = 900) {
+  g.font = `${weight} ${px}px ${FONT}`
+  while (g.measureText(text).width > maxW && px > 8) {
+    px -= 2
+    g.font = `${weight} ${px}px ${FONT}`
+  }
+  return px
+}
+
+/** Casilla de votación marcada con X ("marca así"). */
+function ballot(g, x, y, size, color) {
+  g.strokeStyle = color
+  g.lineWidth = size * 0.1
+  g.strokeRect(x, y, size, size)
+  g.lineWidth = size * 0.14
+  g.beginPath()
+  g.moveTo(x + size * 0.15, y + size * 0.15)
+  g.lineTo(x + size * 0.85, y + size * 0.85)
+  g.moveTo(x + size * 0.85, y + size * 0.15)
+  g.lineTo(x + size * 0.15, y + size * 0.85)
+  g.stroke()
+}
+
+/** "Pinta" electoral pintada en la fachada (estilo El Alto, partido ficticio). */
+export function makePintaTexture(p) {
+  const c = makeCanvas(1024, 512)
+  const g = c.getContext('2d')
+  g.fillStyle = p.bg
+  g.fillRect(0, 0, 1024, 512)
+  // pintura gastada
+  const r = rng(p.sigla.charCodeAt(0) * 7)
+  g.fillStyle = 'rgba(90,70,50,0.12)'
+  for (let i = 0; i < 40; i++) g.fillRect(r() * 1024, r() * 512, 20 + r() * 80, 4 + r() * 10)
+  g.fillStyle = p.main
+  g.fillRect(0, 0, 1024, 70)
+  g.fillRect(0, 442, 1024, 70)
+  g.textAlign = 'left'
+  g.textBaseline = 'middle'
+  g.fillStyle = p.accent
+  fitText(g, 'VOTA', 300, 70)
+  g.fillText('VOTA', 40, 125)
+  g.fillStyle = p.main
+  fitText(g, p.nombre, 700, 130)
+  g.fillText(p.nombre, 40, 235)
+  g.fillStyle = p.accent
+  fitText(g, p.lema, 940, 52, 700)
+  g.fillText(p.lema, 40, 360)
+  // sigla + casilla marcada
+  g.fillStyle = p.main
+  g.beginPath()
+  g.arc(870, 175, 95, 0, Math.PI * 2)
+  g.fill()
+  g.fillStyle = p.bg
+  g.textAlign = 'center'
+  fitText(g, p.sigla, 150, 70)
+  g.fillText(p.sigla, 870, 178)
+  ballot(g, 820, 290, 100, p.accent)
+  return canvasTexture(c)
+}
+
+/** Afiche de candidato pegado en los postes. */
+export function makePosterTexture(p) {
+  const c = makeCanvas(256, 352)
+  const g = c.getContext('2d')
+  g.fillStyle = p.main
+  g.fillRect(0, 0, 256, 352)
+  g.fillStyle = p.bg
+  g.fillRect(12, 12, 232, 220)
+  // retrato caricaturesco del candidato (sonrisa de campaña)
+  g.fillStyle = '#c68a5e'
+  g.beginPath()
+  g.arc(128, 120, 62, 0, Math.PI * 2)
+  g.fill()
+  g.fillStyle = '#1b1b1b'
+  g.fillRect(70, 52, 116, 26)
+  g.beginPath()
+  g.arc(105, 112, 7, 0, Math.PI * 2)
+  g.arc(151, 112, 7, 0, Math.PI * 2)
+  g.fill()
+  g.fillRect(100, 136, 56, 9) // bigote
+  g.strokeStyle = '#1b1b1b'
+  g.lineWidth = 5
+  g.beginPath()
+  g.arc(128, 150, 24, 0.15 * Math.PI, 0.85 * Math.PI)
+  g.stroke()
+  g.fillStyle = p.accent
+  g.fillRect(66, 190, 124, 42) // corbata/saco
+  g.fillStyle = '#ffffff'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  fitText(g, p.nombre, 236, 34)
+  g.fillText(p.nombre, 128, 262)
+  fitText(g, `VOTA ${p.sigla}`, 150, 36)
+  g.fillText(`VOTA ${p.sigla}`, 100, 312)
+  ballot(g, 188, 288, 46, '#ffffff')
+  return canvasTexture(c)
+}
+
+/** Bache: hueco irregular con grietas (fondo transparente). */
+export function makePotholeTexture() {
+  const c = makeCanvas(256, 256)
+  const g = c.getContext('2d')
+  const r = rng(77)
+  const pts = []
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2
+    const rad = 80 + r() * 38
+    pts.push([128 + Math.cos(a) * rad, 128 + Math.sin(a) * rad])
+  }
+  // borde de asfalto roto
+  g.fillStyle = '#4a4540'
+  g.beginPath()
+  pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)))
+  g.closePath()
+  g.fill()
+  // fondo del hueco (más oscuro al centro)
+  const grad = g.createRadialGradient(128, 128, 10, 128, 128, 100)
+  grad.addColorStop(0, '#0e0c0b')
+  grad.addColorStop(1, '#2c2723')
+  g.fillStyle = grad
+  g.beginPath()
+  pts.forEach(([x, y], i) => {
+    const px = 128 + (x - 128) * 0.82
+    const py = 128 + (y - 128) * 0.82
+    i ? g.lineTo(px, py) : g.moveTo(px, py)
+  })
+  g.closePath()
+  g.fill()
+  // piedritas y grietas
+  g.fillStyle = '#6b625a'
+  for (let i = 0; i < 14; i++) g.fillRect(70 + r() * 116, 70 + r() * 116, 4 + r() * 6, 3 + r() * 5)
+  g.strokeStyle = '#1a1716'
+  g.lineWidth = 2.5
+  for (let i = 0; i < 7; i++) {
+    const a = r() * Math.PI * 2
+    g.beginPath()
+    g.moveTo(128 + Math.cos(a) * 100, 128 + Math.sin(a) * 100)
+    g.lineTo(128 + Math.cos(a + 0.15) * 124, 128 + Math.sin(a + 0.15) * 124)
+    g.stroke()
+  }
+  return canvasTexture(c)
+}
+
 /** Degradado de cielo si la foto no carga. */
 export function makeSkyFallback() {
   const c = makeCanvas(512, 512)

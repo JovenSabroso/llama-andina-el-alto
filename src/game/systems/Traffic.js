@@ -29,7 +29,7 @@ function weighted(list) {
 export class Traffic {
   /**
    * @param demo   sin infracciones (menú y pantalla final)
-   * @param events onEscape(v), onRedRun(v), onAmbulance()
+   * @param events onEscape(v), onRedRun(v), onAmbulance(), onBump(v)
    */
   constructor(root, world, { demo = false, events = {} } = {}) {
     this.root = root
@@ -192,6 +192,27 @@ export class Traffic {
           v.escaped = true
           this.removeBubble(v)
           this.events.onEscape?.(v)
+        }
+        // ¿una rueda cayó en un bache? salto + frenazo
+        const vx = LANES[v.lane]
+        for (const b of this.world.baches) {
+          if (prevFront < b.z && newFront >= b.z && Math.abs(vx - b.x) < v.width / 2 + b.r) {
+            v.bump = 0.4
+            v.speed *= 0.72
+            this.events.onBump?.(v)
+            break
+          }
+        }
+        if (v.bump > 0) {
+          v.bump -= dt
+          const p = 1 - Math.max(0, v.bump) / 0.4
+          const amp = v.type === 'moto' ? 0.45 : 0.25
+          v.model.group.position.y = Math.sin(p * Math.PI) * amp
+          v.model.group.rotation.x = Math.sin(p * Math.PI * 2) * 0.07
+          v.model.group.rotation.z = Math.sin(p * Math.PI * 3) * 0.04
+        } else if (v.model.group.position.y !== 0) {
+          v.model.group.position.y = 0
+          v.model.group.rotation.set(0, 0, 0)
         }
         if (v.bubble) v.bubble.visible = v.z > BUBBLE_Z
         v.model.group.position.z = v.z
