@@ -82,7 +82,7 @@ docs/                       Enunciado de la tarea
 Ver [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Créditos
-- Integrantes: _completar_. Docente: Ing. Juan Gabriel Lazcano Balanza.
+- Grupo: **Capa 8**. Integrantes: _completar_. Docente: Ing. Juan Gabriel Lazcano Balanza.
 - Foto de fondo: ["Nevado del Illimani desde El Alto"](https://commons.wikimedia.org/wiki/File:Nevado_del_Illimani_desde_El_Alto.jpg), Qhanaaru, Wikimedia Commons, **CC0**.
 - Texturas: Asphalt031 y Bricks105 de [ambientCG.com](https://ambientcg.com), **CC0**.
 - Modelos 3D, sonidos (WebAudio), letreros, wiphala, aguayo, baches y propaganda: hechos con código por el grupo.

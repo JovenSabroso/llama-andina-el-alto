@@ -147,7 +147,7 @@ const restart = () => game?.restart()
     <!-- CRÉDITOS -->
     <div v-if="state.credits" class="panel">
       <h2>Créditos</h2>
-      <p>Tarea H4_T4 · Programación Gráfica y Multimedia I · UNIFRANZ El Alto<br />Docente: Ing. Juan Gabriel Lazcano Balanza</p>
+      <p>Tarea H4_T4 · Programación Gráfica y Multimedia I · UNIFRANZ El Alto<br />Docente: Ing. Juan Gabriel Lazcano Balanza<br />Grupo: Capa 8</p>
       <p class="small">
         Foto de fondo: "Nevado del Illimani desde El Alto", Qhanaaru, Wikimedia Commons (CC0).<br />
         Fotos de alcaldes (CC BY 2.0, Wikimedia Commons): Eliser Roca por Asi Es Mi Pueblo; Eva Copa por Alejandra Vaca, Cámara de Senadores.<br />
