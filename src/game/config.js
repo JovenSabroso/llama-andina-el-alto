@@ -1,0 +1,14 @@
+// Constantes del mundo (unidades = metros aprox.). Los vehículos avanzan hacia +z,
+// es decir, hacia la cámara; la llama está sobre la pasarela en z = 0.
+export const LANES = [-3.5, 0, 3.5] // centro de cada carril (x)
+export const ROAD_HALF = 5.6 // media anchura de la calzada
+export const STOP_Z = -16 // línea de pare del semáforo
+export const ZEBRA = { z0: -15.2, z1: -11.6 } // paso de cebra
+export const DECK_Y = 5 // altura de la pasarela
+export const DECK_TOP = 5.2 // superficie donde camina la llama
+export const SPAWN_Z = -175 // aparición de vehículos (oculta por la niebla)
+export const DESPAWN_Z = 18 // detrás de la cámara
+export const ESCAPE_Z = 1.5 // un infractor que pasa bajo la pasarela "se escapó"
+export const BUBBLE_Z = -95 // desde aquí se ven los globos de infracción
+export const LIGHT_TIMES = { verde: 5.5, amarillo: 1.6, rojo: 5.5 }
+export const MAX_LIVES = 3

@@ -1,57 +1,90 @@
-// Escena 1: menú. Presenta el problema social y espera la acción para jugar.
-import * as THREE from 'three'
+// Escena 1: menú con intro cinematográfica.
+// 0 → 3,4 s: la cámara baja desde el cielo sobre la avenida hasta la llama,
+// que se da la vuelta y le escupe a la pantalla (Vue dibuja el "splash").
+// Después la cámara se balancea y la llama escupe de vez en cuando.
+// Los textos del menú los dibuja Vue encima del canvas (GameView.vue).
 import { BaseScene } from './BaseScene.js'
-import { makeEmojiTexture, makeTextMesh, placeText } from '../utils/textures.js'
+import { DECK_TOP } from '../config.js'
+import { sfx } from '../utils/sfx.js'
+
+const INTRO = 3.4 // duración del vuelo de cámara
+const SPIT_AT = 3.0 // momento del escupitajo a la pantalla
+const smooth = (t) => t * t * (3 - 2 * t)
+const lerp = (a, b, t) => a + (b - a) * t
+
+// cámara: inicio (vista de pájaro) → final (frente a la llama)
+const FROM = { x: 0, y: 55, z: 40, lx: 0, ly: 0, lz: -90 }
+const TO = { x: 2.2, y: DECK_TOP + 4.6, z: 10, lx: 0, ly: DECK_TOP + 1.6, lz: -6 }
 
 export class MenuScene extends BaseScene {
-  async preload() {
-    this.llamaTex = makeEmojiTexture('🦙', 256)
-  }
-
   create() {
-    this.createBackground()
-    this.title = makeTextMesh(['LLAMA ANDINA', 'Cosecha de El Alto'], { px: 84, color: '#ffd166' })
-    this.pitch = makeTextMesh(
-      ['Tu familia necesita comer sano:', 'recoge alimentos andinos y esquiva la comida chatarra'],
-      { px: 44, font: 600 },
-    )
-    this.cta = makeTextMesh('Toca o presiona ESPACIO para jugar', { px: 52, color: '#ffffff' })
-    this.record = makeTextMesh(`Mejor puntaje: ${this.game.best}`, { px: 44, color: '#a8e6a1' })
-    this.llama = new THREE.Mesh(
-      new THREE.PlaneGeometry(1, 1),
-      new THREE.MeshBasicMaterial({ map: this.llamaTex, transparent: true, depthWrite: false }),
-    )
-    for (const m of [this.title, this.pitch, this.cta, this.record, this.llama]) {
-      m.renderOrder = 20
-      this.root.add(m)
+    this.createStage({ demo: true })
+    // la llama mira a la cámara
+    this.llama.baseYaw = Math.PI
+    this.llama.group.rotation.y = Math.PI
+    this.t = 0
+    this.spat = false
+    this.splashShown = false
+    this.done = false
+    this.nextSpit = INTRO + 3
+    if (this.data.restore?.introDone) {
+      // tras F5: sin repetir la intro
+      this.t = INTRO
+      this.spat = this.splashShown = true
     }
+    this.game.emit('menuIntro', false)
+    this.update(0)
   }
 
-  onResize() {
-    this.resizeBackground()
-    const { w, h } = this.game.view()
-    const maxW = w * 0.92
-    placeText(this.title, h * 0.2, maxW)
-    placeText(this.pitch, h * 0.09, maxW)
-    placeText(this.cta, h * 0.07, maxW)
-    placeText(this.record, h * 0.06, maxW)
-    this.title.position.set(0, h * 0.24, 0)
-    this.pitch.position.set(0, h * 0.07, 0)
-    this.record.position.set(0, -h * 0.05, 0)
-    this.cta.position.set(0, -h * 0.17, 0)
-    const size = Math.min(h * 0.2, w * 0.3)
-    this.llama.scale.set(size, size, 1)
-    this.llamaBaseY = -h * 0.32
+  snapshot() {
+    return { introDone: this.done }
   }
 
   update(dt) {
-    const t = this.game.time
-    this.parallax.update(dt, 3)
-    this.llama.position.set(0, this.llamaBaseY + Math.abs(Math.sin(t * 3)) * 0.8, 0)
-    this.cta.material.opacity = 0.65 + Math.sin(t * 4) * 0.35
+    this.t += dt
+    const t = this.t
+    this.updateStage(dt)
+    this.llama.update(dt, 0)
+
+    // vuelo de cámara con suavizado (smoothstep)
+    const p = smooth(Math.min(1, t / (INTRO - 0.4)))
+    let x = lerp(FROM.x, TO.x, p)
+    let y = lerp(FROM.y, TO.y, p)
+    if (p >= 1) {
+      x += Math.sin(t * 0.3) * 1.2
+      y += Math.sin(t * 0.45) * 0.3
+    }
+    this.placeCamera(x, y, lerp(FROM.z, TO.z, p), lerp(FROM.lx, TO.lx, p), lerp(FROM.ly, TO.ly, p), lerp(FROM.lz, TO.lz, p))
+
+    // ¡escupitajo a la pantalla!
+    if (!this.spat && t >= SPIT_AT) {
+      this.spat = true
+      this.llama.spit()
+    }
+    if (!this.splashShown && t >= SPIT_AT + 0.18) {
+      this.splashShown = true
+      sfx.spit()
+      this.game.emit('menuSpit')
+    }
+    if (!this.done && t >= INTRO) {
+      this.done = true
+      this.game.emit('menuIntro', true) // Vue muestra el título y los botones
+    }
+    // modo "atracción": la llama escupe de vez en cuando
+    if (this.done && t > this.nextSpit) {
+      this.llama.spit()
+      this.nextSpit = t + 4 + Math.random() * 3
+    }
   }
 
-  onAction() {
-    this.game.start('play')
+  onCommand(cmd) {
+    if (cmd !== 'action') return
+    if (!this.done) {
+      // saltar la intro
+      this.t = INTRO
+      this.spat = this.splashShown = true
+    } else {
+      this.game.emit('menuStart') // Vue hace la transición y arranca el juego
+    }
   }
 }
